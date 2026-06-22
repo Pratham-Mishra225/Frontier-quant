@@ -12,8 +12,8 @@ def fetch_historical_returns(tickers: List[str], lookback_years: int = 3) -> Dic
     if not tickers:
         raise ValueError("Ticker list cannot be empty.")
     
-    # Ensure tickers are uppercase and unique
-    tickers = list(set([t.upper() for t in tickers]))
+    # Ensure tickers are uppercase and unique, and sort them for deterministic output
+    tickers = sorted(list(set([t.upper() for t in tickers])))
 
     end_date = datetime.today()
     # Using 365.25 to account for leap years

@@ -25,6 +25,15 @@ def optimize_portfolio(returns_dict: Dict[str, List[float]], risk_free_rate: flo
     The core engine. Takes periodic returns, calculates the Max Sharpe portfolio,
     and generates coordinates for the Efficient Frontier.
     """
+    # --- Input Validation Guards ---
+    if len(returns_dict) < 2:
+        raise ValueError("At least 2 assets are required for portfolio optimization.")
+    lengths = [len(v) for v in returns_dict.values()]
+    if len(set(lengths)) > 1:
+        raise ValueError("All return series must have the same length.")
+    if any(len(v) < 2 for v in returns_dict.values()):
+        raise ValueError("Each asset must have at least 2 return observations.")
+
     symbols = list(returns_dict.keys())
     
     # Convert dictionary to numpy array: shape (num_assets, num_observations)
@@ -75,7 +84,8 @@ def optimize_portfolio(returns_dict: Dict[str, List[float]], risk_free_rate: flo
         # Constraint 2: The portfolio return must equal the specific target return for this point
         ef_constraints = (
             {'type': 'eq', 'fun': lambda x: np.sum(x) - 1.0},
-            {'type': 'eq', 'fun': lambda x: portfolio_performance(x, mean_returns, cov_matrix)[0] - target}
+            # Fixed Python late-binding closure bug by using a default argument (t=target)
+            {'type': 'eq', 'fun': lambda x, t=target: portfolio_performance(x, mean_returns, cov_matrix)[0] - t}
         )
         
         ef_res = sco.minimize(
