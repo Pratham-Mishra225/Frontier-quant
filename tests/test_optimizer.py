@@ -1,46 +1,120 @@
+"""
+Unit tests for frontier_api.core.optimizer — pytest-compatible.
+Run with: pytest tests/test_optimizer.py -v
+"""
+import pytest
 from frontier_api.core.optimizer import optimize_portfolio
 
-def run_tests():
-    """
-    Feeds fake, hardcoded daily return arrays into the math engine to verify 
-    output structure and mathematical constraints without needing yfinance.
-    """
-    
-    # Fake daily returns over 5 days for 3 assets
-    fake_returns_data = {
+# ---------------------------------------------------------------------------
+# Shared fixture — fake daily returns for 3 assets over 5 trading days
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def fake_returns():
+    return {
         "AAPL": [0.010, 0.005, -0.002, 0.015, 0.008],
-        "MSFT": [0.008, 0.010, 0.000, -0.005, 0.012],
-        "GOOG": [-0.010, 0.020, 0.010, -0.015, 0.005]
+        "MSFT": [0.008, 0.010,  0.000, -0.005, 0.012],
+        "GOOG": [-0.010, 0.020, 0.010, -0.015, 0.005],
     }
 
-    print("🚀 Initializing Frontier Math Engine...")
-    result = optimize_portfolio(fake_returns_data, risk_free_rate=0.04)
 
-    # --- Test 1: Verify the Portfolio Metrics ---
-    optimal = result["optimal_portfolio"]
-    print("\n[Test 1] Max Sharpe Portfolio Metrics:")
-    print(f"  Sharpe Ratio: {optimal['sharpe_ratio']}")
-    print(f"  Expected Return: {optimal['expected_annual_return']}")
-    print(f"  Volatility: {optimal['annual_volatility']}")
-    
-    # --- Test 2: Verify the Weights Constraint ---
-    weights = optimal["weights"]
-    print(f"\n[Test 2] Asset Weights: {weights}")
-    
-    total_weight = sum(weights.values())
-    print(f"  Sum of all weights: {total_weight:.4f}")
-    
-    # The sum should be incredibly close to 1.0 (allowing for tiny floating-point rounding differences)
-    assert round(total_weight, 2) == 1.0, f"FAILED: Weights sum to {total_weight}, not 1.0!"
-    print("  ✅ Constraint Passed: Weights sum exactly to 1.0")
+# ---------------------------------------------------------------------------
+# Correctness tests
+# ---------------------------------------------------------------------------
 
-    # --- Test 3: Verify the Efficient Frontier ---
-    frontier = result["frontier_curve"]
-    print(f"\n[Test 3] Efficient Frontier Curve:")
-    print(f"  ✅ Generated {len(frontier)} plot points.")
-    print(f"  Sample Point: {frontier[0]}")
-    
-    print("\n🏁 Phase 2 Completed Successfully! The Math Engine is robust.")
+def test_output_has_required_keys(fake_returns):
+    """Result must contain 'optimal_portfolio' and 'frontier_curve'."""
+    result = optimize_portfolio(fake_returns, risk_free_rate=0.04)
+    assert "optimal_portfolio" in result
+    assert "frontier_curve" in result
 
-if __name__ == "__main__":
-    run_tests()
+
+def test_optimal_portfolio_keys(fake_returns):
+    """optimal_portfolio must expose all four metric keys."""
+    optimal = optimize_portfolio(fake_returns)["optimal_portfolio"]
+    assert "sharpe_ratio" in optimal
+    assert "expected_annual_return" in optimal
+    assert "annual_volatility" in optimal
+    assert "weights" in optimal
+
+
+def test_weights_sum_to_one(fake_returns):
+    """Portfolio weights must sum to exactly 1.0 (no-leverage, no-short constraint)."""
+    weights = optimize_portfolio(fake_returns)["optimal_portfolio"]["weights"]
+    total = sum(weights.values())
+    assert round(total, 2) == 1.0, f"Weights sum to {total}, expected 1.0"
+
+
+def test_weights_are_non_negative(fake_returns):
+    """All weights must be >= 0 (long-only constraint)."""
+    weights = optimize_portfolio(fake_returns)["optimal_portfolio"]["weights"]
+    for ticker, w in weights.items():
+        assert w >= 0.0, f"Negative weight found for {ticker}: {w}"
+
+
+def test_weights_cover_all_assets(fake_returns):
+    """Weights dict must contain an entry for every input asset."""
+    weights = optimize_portfolio(fake_returns)["optimal_portfolio"]["weights"]
+    assert set(weights.keys()) == set(fake_returns.keys())
+
+
+def test_frontier_curve_is_non_empty(fake_returns):
+    """At least one Efficient Frontier point must be returned."""
+    frontier = optimize_portfolio(fake_returns)["frontier_curve"]
+    assert len(frontier) > 0
+
+
+def test_frontier_points_have_correct_keys(fake_returns):
+    """Each frontier point must have 'volatility' and 'return_rate'."""
+    frontier = optimize_portfolio(fake_returns)["frontier_curve"]
+    for point in frontier:
+        assert "volatility" in point
+        assert "return_rate" in point
+
+
+def test_frontier_volatilities_are_positive(fake_returns):
+    """Volatility (standard deviation) must always be a positive number."""
+    frontier = optimize_portfolio(fake_returns)["frontier_curve"]
+    for point in frontier:
+        assert point["volatility"] > 0
+
+
+def test_sharpe_ratio_is_finite(fake_returns):
+    """Sharpe ratio must be a real, finite number."""
+    import math
+    sharpe = optimize_portfolio(fake_returns)["optimal_portfolio"]["sharpe_ratio"]
+    assert math.isfinite(sharpe)
+
+
+# ---------------------------------------------------------------------------
+# Input guard tests
+# ---------------------------------------------------------------------------
+
+def test_raises_on_single_asset():
+    """Optimizer must reject a single-asset input with a clear ValueError."""
+    with pytest.raises(ValueError, match="At least 2 assets"):
+        optimize_portfolio({"AAPL": [0.01, 0.02, 0.03]})
+
+
+def test_raises_on_mismatched_lengths():
+    """Optimizer must reject series with different observation counts."""
+    with pytest.raises(ValueError, match="same length"):
+        optimize_portfolio({
+            "AAPL": [0.01, 0.02, 0.03],
+            "MSFT": [0.01, 0.02],
+        })
+
+
+def test_raises_on_insufficient_observations():
+    """Optimizer must reject series with fewer than 2 data points."""
+    with pytest.raises(ValueError, match="at least 2 return observations"):
+        optimize_portfolio({
+            "AAPL": [0.01],
+            "MSFT": [0.02],
+        })
+
+
+def test_raises_on_empty_dict():
+    """An empty returns dict must also raise ValueError (< 2 assets)."""
+    with pytest.raises(ValueError, match="At least 2 assets"):
+        optimize_portfolio({})

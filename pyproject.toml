@@ -37,3 +37,10 @@ all = [
     "pytest",
     "httpx",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+markers = [
+    "network: marks tests that require a live internet connection (Yahoo Finance)",
+]

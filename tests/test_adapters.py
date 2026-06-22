@@ -1,36 +1,80 @@
+"""
+Unit / integration tests for frontier_api.adapters.yfinance_client — pytest-compatible.
+
+Tests marked with @pytest.mark.network make live calls to Yahoo Finance.
+Skip them in CI with: pytest -m "not network"
+Run with: pytest tests/test_adapters.py -v
+"""
+import pytest
 from frontier_api.adapters.yfinance_client import fetch_historical_returns
 
-def run_adapter_test():
-    """
-    Tests the yfinance adapter by fetching 1 year of real market data 
-    for AAPL and MSFT and verifying the output structure.
-    """
-    tickers_to_test = ["AAPL", "MSFT"]
-    lookback = 1  # 1 year is enough to verify functionality
-    
-    print(f"🚀 Fetching {lookback} year(s) of data for {tickers_to_test} via yfinance...")
-    
-    try:
-        # Call the function from your adapter
-        returns_dict = fetch_historical_returns(tickers_to_test, lookback_years=lookback)
-        
-        print("\n[Test 1] Verify Output Structure:")
-        print(f"  ✅ Returned a dictionary with {len(returns_dict)} keys: {list(returns_dict.keys())}")
-        
-        print("\n[Test 2] Verify Data Alignment:")
-        # Check that all arrays have the exact same length (crucial for NumPy matrix math)
-        lengths = [len(returns) for returns in returns_dict.values()]
-        print(f"  Data points per ticker: {lengths}")
-        
-        if len(set(lengths)) == 1:
-            print("  ✅ Constraint Passed: Matrix dimensions match perfectly.")
-        else:
-            print("  ❌ FAILED: Matrix dimensions are misaligned.")
-            
-        print("\n🏁 Phase 3 Completed Successfully! The Market Data Adapter is robust.")
-        
-    except Exception as e:
-        print(f"\n❌ Adapter Test Failed: {str(e)}")
 
-if __name__ == "__main__":
-    run_adapter_test()
+# ---------------------------------------------------------------------------
+# Input guard tests  (no network required)
+# ---------------------------------------------------------------------------
+
+def test_raises_on_empty_ticker_list():
+    """Adapter must reject an empty ticker list immediately."""
+    with pytest.raises(ValueError, match="cannot be empty"):
+        fetch_historical_returns([])
+
+
+# ---------------------------------------------------------------------------
+# Live network tests
+# ---------------------------------------------------------------------------
+
+@pytest.mark.network
+def test_returns_correct_type():
+    """Output must be a dict mapping ticker strings to lists of floats."""
+    result = fetch_historical_returns(["AAPL", "MSFT"], lookback_years=1)
+    assert isinstance(result, dict)
+    for ticker, series in result.items():
+        assert isinstance(ticker, str)
+        assert isinstance(series, list)
+        assert all(isinstance(v, float) for v in series)
+
+
+@pytest.mark.network
+def test_returns_expected_tickers():
+    """All requested tickers must appear as keys in the output."""
+    tickers = ["AAPL", "MSFT"]
+    result = fetch_historical_returns(tickers, lookback_years=1)
+    assert set(result.keys()) == set(t.upper() for t in tickers)
+
+
+@pytest.mark.network
+def test_data_alignment():
+    """All return series must have identical length (matrix alignment requirement)."""
+    result = fetch_historical_returns(["AAPL", "MSFT"], lookback_years=1)
+    lengths = [len(v) for v in result.values()]
+    assert len(set(lengths)) == 1, f"Misaligned series lengths: {lengths}"
+
+
+@pytest.mark.network
+def test_series_are_non_empty():
+    """Each return series must contain at least one observation."""
+    result = fetch_historical_returns(["AAPL", "MSFT"], lookback_years=1)
+    for ticker, series in result.items():
+        assert len(series) > 0, f"Empty series returned for {ticker}"
+
+
+@pytest.mark.network
+def test_tickers_are_sorted_deterministically():
+    """Adapter must return tickers in sorted order regardless of input order."""
+    result = fetch_historical_returns(["MSFT", "AAPL"], lookback_years=1)
+    assert list(result.keys()) == sorted(result.keys())
+
+
+@pytest.mark.network
+def test_uppercase_normalisation():
+    """Lowercase tickers must be normalised to uppercase in the output."""
+    result = fetch_historical_returns(["aapl", "msft"], lookback_years=1)
+    for key in result.keys():
+        assert key == key.upper()
+
+
+@pytest.mark.network
+def test_duplicate_tickers_deduplicated():
+    """Passing duplicate tickers must not double entries in the output."""
+    result = fetch_historical_returns(["AAPL", "AAPL", "MSFT"], lookback_years=1)
+    assert len(result) == 2
