@@ -2,13 +2,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import Data Contracts (Phase 1)
-from frontier_api.models.schemas import OptimizeRequest, TickerOptimizeRequest, OptimizeResponse
+from frontier.models.schemas import OptimizeRequest, TickerOptimizeRequest, OptimizeResponse
 
 # Import Pure Math Engine (Phase 2)
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier.core.optimizer import optimize_portfolio
 
 # Import Market Data Adapter (Phase 3)
-from frontier_api.adapters.yfinance_client import fetch_historical_returns
+from frontier.adapters.yfinance_client import fetch_historical_returns
 
 app = FastAPI(
     title="Frontier API",

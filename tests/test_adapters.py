@@ -1,12 +1,12 @@
 """
-Unit / integration tests for frontier_api.adapters.yfinance_client — pytest-compatible.
+Unit / integration tests for frontier.adapters.yfinance_client — pytest-compatible.
 
 Tests marked with @pytest.mark.network make live calls to Yahoo Finance.
 Skip them in CI with: pytest -m "not network"
 Run with: pytest tests/test_adapters.py -v
 """
 import pytest
-from frontier_api.adapters.yfinance_client import fetch_historical_returns
+from frontier.adapters.yfinance_client import fetch_historical_returns
 
 
 # ---------------------------------------------------------------------------

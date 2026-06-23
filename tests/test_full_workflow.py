@@ -6,8 +6,8 @@ Skip in CI with: pytest -m "not network"
 Run with: pytest tests/test_full_workflow.py -v
 """
 import pytest
-from frontier_api.adapters.yfinance_client import fetch_historical_returns
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier.adapters.yfinance_client import fetch_historical_returns
+from frontier.core.optimizer import optimize_portfolio
 
 TICKERS = ["AAPL", "MSFT", "GOOG"]
 LOOKBACK = 1  # 1 year — fast enough for CI, representative enough to validate

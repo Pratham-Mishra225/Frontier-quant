@@ -1,9 +1,9 @@
 """
-Unit tests for frontier_api.core.optimizer — pytest-compatible.
+Unit tests for frontier.core.optimizer — pytest-compatible.
 Run with: pytest tests/test_optimizer.py -v
 """
 import pytest
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier.core.optimizer import optimize_portfolio
 
 # ---------------------------------------------------------------------------
 # Shared fixture — fake daily returns for 3 assets over 5 trading days

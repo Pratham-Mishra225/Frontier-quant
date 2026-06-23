@@ -50,4 +50,4 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Check import hygiene
-        run: python -c "import frontier_api; print(frontier_api.__version__)"
+        run: python -c "import frontier; print(frontier.__version__)"
