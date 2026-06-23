@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from frontier import __version__
+
 # Import Data Contracts (Phase 1)
 from frontier.models.schemas import OptimizeRequest, TickerOptimizeRequest, OptimizeResponse
 
@@ -13,7 +15,7 @@ from frontier.adapters.yfinance_client import fetch_historical_returns
 app = FastAPI(
     title="Frontier API",
     description="Stateless, high-performance Mean-Variance portfolio optimization engine.",
-    version="1.0.0",
+    version=__version__,
     docs_url="/docs",
     redoc_url="/redoc"
 )

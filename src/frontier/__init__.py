@@ -20,7 +20,13 @@ from .core.optimizer import (
 )
 from .adapters.yfinance_client import fetch_historical_returns as fetch_data
 
-__version__ = "0.1.0"
+from importlib.metadata import version as _pkg_version, PackageNotFoundError as _PNF
+
+try:
+    __version__ = _pkg_version("frontier-api")
+except _PNF:
+    # Package not yet installed (e.g. bare source checkout without pip install -e .)
+    __version__ = "0.0.0+dev"
 __author__ = "Pratham Mishra"
 __license__ = "MIT"
 

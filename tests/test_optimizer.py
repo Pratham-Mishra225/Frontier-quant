@@ -6,20 +6,7 @@ import pytest
 from frontier.core.optimizer import optimize_portfolio
 
 # ---------------------------------------------------------------------------
-# Shared fixture — fake daily returns for 3 assets over 5 trading days
-# ---------------------------------------------------------------------------
-
-@pytest.fixture
-def fake_returns():
-    return {
-        "AAPL": [0.010, 0.005, -0.002, 0.015, 0.008],
-        "MSFT": [0.008, 0.010,  0.000, -0.005, 0.012],
-        "GOOG": [-0.010, 0.020, 0.010, -0.015, 0.005],
-    }
-
-
-# ---------------------------------------------------------------------------
-# Correctness tests
+# Correctness tests  (fake_returns fixture is defined in conftest.py)
 # ---------------------------------------------------------------------------
 
 def test_output_has_required_keys(fake_returns):

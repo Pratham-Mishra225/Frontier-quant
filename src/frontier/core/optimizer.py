@@ -2,6 +2,8 @@ import numpy as np
 import scipy.optimize as sco
 from typing import Dict, List, Tuple
 
+from frontier.exceptions import ConvergenceError
+
 TRADING_DAYS_PER_YEAR = 252
 
 def portfolio_performance(weights: np.ndarray, mean_returns: np.ndarray, cov_matrix: np.ndarray) -> Tuple[float, float]:
@@ -64,6 +66,11 @@ def optimize_portfolio(returns_dict: Dict[str, List[float]], risk_free_rate: flo
         bounds=bounds,
         constraints=constraints
     )
+
+    if not opt_sharpe.success:
+        raise ConvergenceError(
+            f"Max-Sharpe optimization failed to converge: {opt_sharpe.message}"
+        )
 
     opt_weights = opt_sharpe.x
     opt_ret, opt_vol = portfolio_performance(opt_weights, mean_returns, cov_matrix)

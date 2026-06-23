@@ -34,10 +34,10 @@ If you are using Frontier inside your own Python application, you interact with 
 
 The yfinance adapter accepts a list of tickers and safely handles missing data to ensure matrix dimensions match perfectly.
 
-from frontier_api.adapters.yfinance_client import fetch_historical_returns
+from frontier import fetch_data
 
 # Fetch 3 years of daily returns
-returns_dict = fetch_historical_returns(
+returns_dict = fetch_data(
     tickers=["AAPL", "MSFT", "GOOG"], 
     lookback_years=3
 )
@@ -47,10 +47,10 @@ returns_dict = fetch_historical_returns(
 
 Pass your dictionary of returns into the optimizer. You can use the adapter's output, or provide your own proprietary data.
 
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier import optimize
 
 # The risk-free rate defaults to 0.04 (4%)
-result = optimize_portfolio(returns_dict, risk_free_rate=0.04)
+result = optimize(returns_dict, risk_free_rate=0.04)
 
 print("Optimal Weights:", result["optimal_portfolio"]["weights"])
 print("Max Sharpe Ratio:", result["optimal_portfolio"]["sharpe_ratio"])
@@ -62,7 +62,7 @@ If you installed with [server], you can instantly launch Frontier as a local RES
 
 Start the server:
 
-uvicorn frontier_api.api.main:app --reload
+uvicorn frontier.api.main:app --reload
 
 
 Once running, visit http://localhost:8000/docs for the interactive Swagger UI.

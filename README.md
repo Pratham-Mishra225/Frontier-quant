@@ -43,7 +43,7 @@ frontier-api/
 ├── tests/
 │
 └── src/
-    └── frontier_api/
+    └── frontier/
         ├── adapters/
         │   └── yfinance_client.py
         │
@@ -90,7 +90,7 @@ pip install -e .
 ### Install Development Dependencies
 
 ```bash
-pip install -r requirements-dev.txt
+pip install -e ".[dev]"
 ```
 
 ---
@@ -100,26 +100,26 @@ pip install -r requirements-dev.txt
 ### Import the Optimizer
 
 ```python
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier import optimize
 ```
 
 ### Fetch Historical Data
 
 ```python
-from frontier_api.adapters.yfinance_client import fetch_historical_returns
+from frontier import fetch_data
 
-returns = fetch_historical_returns(
+returns = fetch_data(
     tickers=["AAPL", "MSFT", "GOOGL"],
-    period="5y"
+    lookback_years=5
 )
 ```
 
 ### Optimize Portfolio
 
 ```python
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier import optimize
 
-weights = optimize_portfolio(returns)
+weights = optimize(returns)
 
 print(weights)
 ```
@@ -129,8 +129,7 @@ print(weights)
 ## Example Workflow
 
 ```python
-from frontier_api.adapters.yfinance_client import fetch_historical_returns
-from frontier_api.core.optimizer import optimize_portfolio
+from frontier import fetch_data, optimize
 
 tickers = [
     "AAPL",
@@ -139,12 +138,12 @@ tickers = [
     "AMZN"
 ]
 
-returns = fetch_historical_returns(
+returns = fetch_data(
     tickers=tickers,
-    period="5y"
+    lookback_years=5
 )
 
-portfolio = optimize_portfolio(returns)
+portfolio = optimize(returns)
 
 print(portfolio)
 ```
@@ -183,7 +182,7 @@ The package can also be exposed through FastAPI.
 Run the server:
 
 ```bash
-uvicorn frontier_api.api.main:app --reload
+uvicorn frontier.api.main:app --reload
 ```
 
 Open:
@@ -213,7 +212,7 @@ pytest tests/test_optimizer.py
 Generate coverage:
 
 ```bash
-pytest --cov=frontier_api
+pytest --cov=frontier
 ```
 
 ---

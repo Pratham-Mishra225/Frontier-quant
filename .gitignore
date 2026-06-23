@@ -1,15 +1,34 @@
 
-
+# Python bytecode
 __pycache__/
 *.pyc
-*.egg-info/
-venv
+*.pyo
 
+# Package build artifacts
+*.egg-info/
+src/*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Test & coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Environment secrets
 .env
 .env.*
-dist/
-build/
+
+# Editor metadata
 .DS_Store
 .vscode/
 .idea/
+
+# Logs
 *.log
